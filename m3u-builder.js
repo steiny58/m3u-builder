@@ -216,7 +216,7 @@ function buildM3uFile(streams, callback) {
 		streams.forEach(function(val,idx) {
 			(params.allCaps == true) ? _name = val.name.toUpperCase() : _name = val.name;
 			(params.removeWhitespace == true) ? _name = val.name.replace(/\s/g,'') : _name = val.name;
-			m3ufile.write('#EXTINF:-1, tvg-id="'+val.id+'" tvg-name="'+_name+'" tvg-logo="'+val.logo+'" group-title="'+val.group+'", '+_name+'\n');
+			m3ufile.write('#EXTINF:-1, catchup="'+val.catchup+'" catchup-source="'+val["catchup-source"]+'" tvg-id="'+val.id+'" tvg-name="'+_name+'" tvg-logo="'+val.logo+'" group-title="'+val.group+'", '+_name+'\n');
 			m3ufile.write(val.url+'\n');
 		})
 		m3ufile.end();
@@ -267,7 +267,7 @@ function buildStreams(sourceId,sourceStreams,_params) {
 				// add unique identifier to id
 				(val.id.length > 0) ? _id=sourceId+'-'+val.id : _id='';
 				
-				_streams.push({'id':_id,'orig':val.orig,'name':val.name,'logo':val.logo,'url':val.url,'group':val.group});
+				_streams.push({'id':_id,'catchup-days':val.catchupdays,'orig':val.orig,'name':val.name,'logo':val.logo,'catchup':val.catchup,'catchup-source':val.catchupsource,'url':val.url,'group':val.group});
 			}
 		}
 	});
@@ -300,7 +300,7 @@ function download(idx, url, callback) {
 	
 	function _handleData(_data) {
 		var contentType = _data.headers['content-type'];
-		if (contentType == 'application/x-gzip') {
+		if (contentType == 'application/x-gzip' || url.path == '.gz') {
 			var gunzip = zlib.createGunzip();            
 			_data.pipe(gunzip);
 			gunzip.on('data', function(data) {
@@ -428,10 +428,16 @@ function parseM3U(req) {
 				(logo == null) ? logo='' : logo=logo[1];
 				group=_line.match(/group-title\="(.*?)"/i);
 				(group == null) ? group='' : group=group[1];
+				catchup=_line.match(/catchup\="(.*?)"/i);
+				(catchup == null) ? catchup='' : catchup=catchup[1];
+				catchupsource=_line.match(/catchup-source\="(.*?)"/i);
+				(catchupsource == null) ? catchupsource='' : catchupsource=catchupsource[1];
+				catchupdays=_line.match(/catchup-days\="(.*?)"/i);
+				(catchupdays == null) ? catchupdays='' : catchupdays=catchupdays[1];
 				break;
 			case 1:
 				url=_line;
-				if (url.length > 0) _streams.push({id:id,orig:name,name:name,logo:logo,url:url,group:group})
+				if (url.length > 0) _streams.push({id:id,catchup:catchup,catchupsource:catchupsource,catchupdays:catchupdays,orig:name,name:name,logo:logo,url:url,group:group})
 				break;
 		}
 	}
